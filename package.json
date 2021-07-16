@@ -1,0 +1,25 @@
+{
+  "name": "zipper",
+  "version": "1.0.0",
+  "description": "A package that downloads and zips images from image url(s).",
+  "main": "dist/index.js",
+  "default": "dist/index.js",
+  "scripts": {
+    "test": "node example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/stillio/zipper.git"
+  },
+  "author": "Stillio",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/stillio/zipper/issues"
+  },
+  "homepage": "https://gitlab.com/stillio/zipper#readme",
+  "dependencies": {
+    "archiver": "^5.3.0",
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {}
+}
