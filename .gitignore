@@ -119,3 +119,7 @@ dist
 
 # specific include
 .DS_Store
+
+# Module should ignore lockfiles with strong semver
+package-lock.json
+yarn.lock
