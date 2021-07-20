@@ -1,52 +1,63 @@
 const archiver = require("archiver");
 const stream = require("stream");
-const axios = require("axios").default;
+const EventEmitter = require("events");
+const Requestor = require("./Requestor");
 
 module.exports = {
   /**
    * Zips a given set of screenshot URL's and returns the stream.
    * @param filename { string } The name of the file, defaults to test.zip.
-   * @param screenshots { Array } The array of screenshot objects, of which at least a url property is required.
+   * @param files { Array } The array of remote file objects, of which at least a url property is required.
+   * @param errorHandler { Function } A custom Error handler if all the retries on a fetch has failed or something went wrong with the zipper, defaults to a throw.
    */
-  async zip({ filename = "test.zip", screenshots = [] }) {
+  async zip({ filename = "test.zip", files = [], errorHandler }) {
+    const emitter = new EventEmitter();
     const archive = archiver("zip", { zlib: 9 });
     const zipReadableStream = new stream.PassThrough();
+    const request = new Requestor();
 
-    if (!screenshots.length) {
-      throw new Error("Screenshots must be a non-empty array.");
+    if (!files.length) {
+      throw new Error("Files must be a non-empty array.");
     }
 
     archive.on("error", (error) => {
-      throw error;
+      emitter.emit("error", error);
     });
 
     archive.on("warning", (error) => {
       if (error.code === "ENOENT") {
-        console.log(error.message);
+        emitter.emit("warning", error);
       } else {
-        throw error;
+        emitter.emit("error", error);
       }
     });
 
     archive.pipe(zipReadableStream);
 
-    for (let index = 0; index < screenshots.length; index++) {
-      const filename = screenshots[index].filename || `test-${index}.png`;
+    const fileBufferPromises = files.map((file) =>
+      request.getBuffer(file.url, errorHandler)
+    );
 
-      const buffer = await axios
-        .get(screenshots[index].url, {
-          responseType: "arraybuffer",
-        })
-        .then((response) => response.data);
+    try {
+      const fileBuffers = await Promise.all(fileBufferPromises);
 
-      archive.append(buffer, { name: filename });
+      fileBuffers.map((buffer, index) => {
+        archive.append(buffer, { name: files[index].filename });
+      });
+
+      archive.finalize();
+
+      return {
+        zipFileName: filename,
+        zipReadableStream,
+        statusEmitter: emitter,
+      };
+    } catch (error) {
+      if (typeof errorHandler === "function") {
+        return errorHandler(error);
+      } else {
+        throw error;
+      }
     }
-
-    archive.finalize();
-
-    return {
-      zipFileName: filename,
-      zipReadableStream,
-    };
   },
 };

@@ -123,3 +123,6 @@ dist
 # Module should ignore lockfiles with strong semver
 package-lock.json
 yarn.lock
+
+__tests__/large.zip
+example/test.zip

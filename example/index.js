@@ -1,15 +1,17 @@
 const { join } = require("path");
 const { createWriteStream } = require("fs");
 
-const zipper = require("../dist/index");
+const zipper = require("../index");
 const mockData = require("./data");
-
-console.log(zipper);
 
 zipper
   .zip(mockData)
   .then((result) => {
-    const { zipFileName, zipReadableStream } = result;
+    const { zipFileName, zipReadableStream, statusEmitter } = result;
+
+    statusEmitter.on("warning", console.log);
+    statusEmitter.on("error", console.log);
+
     const output = createWriteStream(join(__dirname, zipFileName), {
       encoding: "binary",
     });
