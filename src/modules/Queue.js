@@ -18,7 +18,7 @@ class QueueProcessor {
   }
 
   getQueue() {
-    return this.items.reverse();
+    return this.items.map((item) => item).reverse();
   }
 
   length() {
