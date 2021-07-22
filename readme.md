@@ -10,29 +10,42 @@ yarn // or npm i
 
 ### Example
 
-This example will use the mockData to generate a zip in the example folder.
+This example will use the mockData to generate a zip in the example folder. It showcases status updates from the status emitter and how failed requests, missing urls and filenames are handled.
 
 ```
-yarn test
+yarn example
 ```
+
+### Testing
+
+Run `yarn test` or `npm run test`. NB: There is a test for zipping 10,000 files from the mock server. This file is around ~2GB.
 
 ### Usage
 
 ```js
 const zipper = require("<path-to-zipper>");
-const { zipFileName, zipReadableStream } = await zipper.zip(
-  dataObject /* Check `example/data.js` for the payload.*/
+const { zipFileName, zipReadableStream, statusEmitter } = await zipper.zip(
+  {
+    filename: 'myfile.zip',
+    files: [
+      {
+        url: 'remote-server/file.png', // Required
+        filename: 'filename.png', // Required
+      }
+    ]
+  }
 );
 ```
 
 ### Zip file data and naming.
 
-The zipper accepts an object as outlined in `example/data.js`. If filename is ommited, the lib will default to `test.zip`.
+The zipper accepts an object as outlined in `example/data.js`. If filename or url is omitted from the file object, that file will not get zipped.
 
-#### Screenshots
-
-The screenshots should be an object with a filename and a url. This allows the user to decide on filenaming and if ommitted, defaults to `image-x.png` where x is the index of the image in the Array.
 
 ### Returns
 
-The Async function returns 2 properties, `zipFileName` for convenience and `zipReadableStream`, which is an implementation of `stream.PassThrough` and where the archive is piped through.
+The Async function returns 2 properties, `zipFileName` for convenience and `zipReadableStream`, which is an implementation of `stream.PassThrough` and where the archive is piped through and `statusEmitter` which can be used to catch errors like:
+
+- Failed being fetched. (Will continue zipping rest)
+- Was missing parameters. (Will continue zipping rest)
+- Archiving errors. (Will not continue the zipping)
