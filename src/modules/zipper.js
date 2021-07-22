@@ -24,7 +24,7 @@ module.exports = {
     const request = new Requestor();
 
     if (queueLength > maxQueueLength) {
-      emitter.emit("warning", "Queue length max exceeded, using max=1000.");
+      emitter.emit("warning", "Queue length max exceeded, using max=500.");
       queueLength = maxQueueLength;
     }
 
@@ -44,9 +44,13 @@ module.exports = {
     let lastProcessedIndex = 0;
 
     const processQ = async (head) => {
-      const fileBufferPromises = head.map((file) =>
-        request.getBuffer(file.url)
-      );
+      const fileBufferPromises = head.map((file) => {
+        if (!file.url || !file.filename) {
+          return Promise.reject("Files require a url and filename property.");
+        } else {
+          return request.getBuffer(file.url);
+        }
+      });
 
       const fileBuffers = await Promise.allSettled(fileBufferPromises);
 

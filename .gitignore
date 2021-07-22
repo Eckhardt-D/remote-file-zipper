@@ -124,6 +124,8 @@ dist
 package-lock.json
 yarn.lock
 
-__tests__/large.zip
 example/test.zip
+__tests__/large.zip
 __tests__/error-continue.zip
+__tests__/missing-filename.zip
+__tests__/missing-url-or-filename.zip

@@ -51,7 +51,7 @@ describe("Remote file zipper", () => {
 
   test("it should continue zipping and emit file on fetch error", (done) => {
     const input = {
-      filename: "test.zip",
+      filename: "error-continue.zip",
       files: [
         {
           filename: "image.png",
@@ -64,23 +64,95 @@ describe("Remote file zipper", () => {
       ],
     };
 
-    zipper.zip(input).then(({ zipReadableStream, statusEmitter }) => {
-      const writable = createWriteStream(join(__dirname, "error-continue.zip"));
-      zipReadableStream.pipe(writable);
+    zipper
+      .zip(input)
+      .then(({ zipFileName, zipReadableStream, statusEmitter }) => {
+        const writable = createWriteStream(join(__dirname, zipFileName));
+        zipReadableStream.pipe(writable);
 
-      writable.on("error", (e) => {
-        throw e;
-      });
+        writable.on("error", (e) => {
+          throw e;
+        });
 
-      statusEmitter.on("error", (error) => {
-        expect(error.file).toBeDefined();
-      });
+        statusEmitter.on("error", (error) => {
+          expect(error.file).toBeDefined();
+        });
 
-      writable.on("close", () => {
-        expect(existsSync(join(__dirname, "error-continue.zip"))).toBe(true);
-        done();
+        writable.on("close", () => {
+          expect(existsSync(join(__dirname, zipFileName))).toBe(true);
+          done();
+        });
       });
-    });
+  });
+
+  test("it should validate if a url exists and emit error for that item", (done) => {
+    const input = {
+      filename: "missing-url-or-filename.zip",
+      files: [
+        {
+          filename: "image.png",
+          url: "http://localhost:4444/image.png",
+        },
+        {
+          filename: "missing.png",
+        },
+      ],
+    };
+
+    zipper
+      .zip(input)
+      .then(({ zipFileName, zipReadableStream, statusEmitter }) => {
+        const writable = createWriteStream(join(__dirname, zipFileName));
+        zipReadableStream.pipe(writable);
+
+        writable.on("error", (e) => {
+          throw e;
+        });
+
+        statusEmitter.on("error", (error) => {
+          expect(error.file).toBeDefined();
+        });
+
+        writable.on("close", () => {
+          expect(existsSync(join(__dirname, zipFileName))).toBe(true);
+          done();
+        });
+      });
+  });
+
+  test("it should validate if a filename exists and emit error for that item", (done) => {
+    const input = {
+      filename: "missing-filename.zip",
+      files: [
+        {
+          filename: "image.png",
+          url: "http://localhost:4444/image.png",
+        },
+        {
+          url: "http://localhost:4444/image.png",
+        },
+      ],
+    };
+
+    zipper
+      .zip(input)
+      .then(({ zipFileName, zipReadableStream, statusEmitter }) => {
+        const writable = createWriteStream(join(__dirname, zipFileName));
+        zipReadableStream.pipe(writable);
+
+        writable.on("error", (e) => {
+          throw e;
+        });
+
+        statusEmitter.on("error", (error) => {
+          expect(error.file).toBeDefined();
+        });
+
+        writable.on("close", () => {
+          expect(existsSync(join(__dirname, zipFileName))).toBe(true);
+          done();
+        });
+      });
   });
 
   test("it should be able to zip a large list of remote files.", (done) => {

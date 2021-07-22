@@ -5,6 +5,7 @@ const { start, stop } = require("../mock/server");
 const zipper = require("../index");
 const mockData = require("./data");
 
+// mock server
 start(() => {
   zipper
     .zip(mockData)
