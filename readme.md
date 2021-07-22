@@ -77,5 +77,33 @@ zipper
 #### Zip
 
 ```
-zip({ filename: String, files: Array<{filename: String, url: String}>, queueLength: Number })
+zip({ filename: String, files: Array<{filename: String, url: String}>, queueLength: Number }) : Promise()
 ```
+
+- `filename`: The name of the final zipped file. `default: test.zip`
+- `files`: The file object `required`
+  - `filename`: The name of the file within the zip. `required`
+  - `url`: The URL of the remote file. `required`
+- `queueLength`: The size of each request queue. `default: 100, max: 500`.
+
+### queueLength information
+
+By default the libray implements a batched request to the files and simultaneuously processes that amount of buffers in memory. If your remote files are large, it's recommended to lower the queueLength to avoid memory and remote server problems. If you're experiencing issues with rate e.g. making too many simultaneuous requests to a file - try lower this too.
+
+### Performance
+
+You can test it yourself by cloning the repo and running:
+
+```
+yarn && yarn test
+```
+
+##### NB: These tests run a local server that serves a single image, one test requests this image 10,000 times which consumes around 1.9GB of storage locally, but proves the resillience.
+
+### Contributions
+
+Just do the thing. No guidelines yet. 🤠
+
+### Support
+
+[Buy me a coffee](https://kaizen.com.na/payment?ref=DONO)
