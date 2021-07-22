@@ -126,3 +126,4 @@ yarn.lock
 
 __tests__/large.zip
 example/test.zip
+__tests__/error-continue.zip

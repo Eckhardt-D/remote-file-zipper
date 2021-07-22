@@ -6,31 +6,44 @@ class Requestor {
     this._currentRetry = 0;
   }
 
-  getBuffer(url, errorHandlerCallback) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const buffer = [];
-        const { body } = await request(url);
+  async _makeBuffer(url) {
+    try {
+      this._currentRetry += 1;
 
-        for await (const data of body) {
-          buffer.push(data);
-        }
+      const buffer = [];
+      const { body, statusCode } = await request(url);
 
-        this._currentRetry = 0;
-        return resolve(Buffer.concat(buffer));
-      } catch (error) {
-        if (this._currentRetry < this._maxRetries) {
-          this._currentRetry += 1;
-          return resolve(this.getBuffer(url));
-        } else if (typeof errorHandlerCallback === "function") {
-          this._currentRetry = 0;
-          return resolve(errorHandlerCallback(error));
-        } else {
-          this._currentRetry = 0;
-          return reject(error);
-        }
+      if (statusCode !== 200) {
+        throw `URL: ${url}, Failed to fetch after ${this._currentRetry} tries.`;
       }
-    });
+
+      for await (const data of body) {
+        buffer.push(data);
+      }
+
+      return Buffer.concat(buffer);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  _handleResponse(response, error = false) {
+    this._currentRetry = 0;
+    if (error) throw response;
+    return response;
+  }
+
+  async getBuffer(url) {
+    try {
+      const response = await this._makeBuffer(url);
+      return this._handleResponse(response);
+    } catch (error) {
+      if (this._currentRetry < this._maxRetries) {
+        return await this.getBuffer(url);
+      } else {
+        throw this._handleResponse(error, true);
+      }
+    }
   }
 }
 
