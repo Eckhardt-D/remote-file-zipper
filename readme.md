@@ -1,51 +1,81 @@
-## Zipper
+# Remote File Zipper
 
-### Getting started
+This package allows the client to pass a large array of files to zip them.
 
-Clone this repo and then install deps:
+### Installation
 
-```
-yarn // or npm i
-```
-
-### Example
-
-This example will use the mockData to generate a zip in the example folder. It showcases status updates from the status emitter and how failed requests, missing urls and filenames are handled.
-
-```
-yarn example
+```bash
+yarn add remote-file-zipper
 ```
 
-### Testing
+or
 
-Run `yarn test` or `npm run test`. NB: There is a test for zipping 10,000 files from the mock server. This file is around ~2GB.
+```bash
+npm i remote-file-zipper
+```
 
 ### Usage
 
 ```js
-const zipper = require("<path-to-zipper>");
-const { zipFileName, zipReadableStream, statusEmitter } = await zipper.zip(
-  {
-    filename: 'myfile.zip',
-    files: [
-      {
-        url: 'remote-server/file.png', // Required
-        filename: 'filename.png', // Required
+const zipper = require("remote-file-zipper");
+const path = require("path");
+const fs = require("fs");
+
+const payload = {
+  filename: "myZippedFile.zip",
+  files: [
+    {
+      filename: "image.png",
+      url: "https://images.theconversation.com/files/350865/original/file-20200803-24-50u91u.jpg",
+    },
+  ],
+  queueLength: 100,
+};
+
+zipper
+  .zip(payload)
+  .then(({ zipFileName, zipReadableStream, statusEmitter }) => {
+    statusEmitter.on("warning", (error) => {
+      console.log(error);
+    });
+
+    statusEmitter.on("error", (error) => {
+      const singleFileError = typeof error.file !== "undefined";
+
+      if (singleFileError) {
+        // There was an error with one file, the rest zips as normal
+        console.log(error.message, error.file);
+      } else {
+        // There was an error with the zipping as a whole, exits.
+        console.log(error);
       }
-    ]
-  }
-);
+    });
+
+    const output = fs.createWriteStream(path.join(__dirname, zipFileName), {
+      encoding: "binary",
+    });
+
+    output.on("error", (error) => {
+      // There was an error writing your file
+      console.log(error);
+    });
+
+    output.on("close", () => {
+      console.log("Zip successfully written.");
+    });
+
+    zipReadableStream.pipe(output);
+  })
+  .catch((error) => {
+    // There was some uncaught error
+    console.log(error);
+  });
 ```
 
-### Zip file data and naming.
+## Methods
 
-The zipper accepts an object as outlined in `example/data.js`. If filename or url is omitted from the file object, that file will not get zipped.
+#### Zip
 
-
-### Returns
-
-The Async function returns 2 properties, `zipFileName` for convenience and `zipReadableStream`, which is an implementation of `stream.PassThrough` and where the archive is piped through and `statusEmitter` which can be used to catch errors like:
-
-- Failed being fetched. (Will continue zipping rest)
-- Was missing parameters. (Will continue zipping rest)
-- Archiving errors. (Will not continue the zipping)
+```
+zip({ filename: String, files: Array<{filename: String, url: String}>, queueLength: Number })
+```
